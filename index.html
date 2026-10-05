@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="브롤 카운터">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>브롤 카운터 파인더</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:#f4f5f7;color:#111827}
+.app{max-width:720px;margin:auto;padding:20px 16px 40px}.top{padding-top:env(safe-area-inset-top)}
+h1{font-size:25px;margin:4px 0 5px}.sub{color:#6b7280;font-size:14px;margin-bottom:18px}
+.search{width:100%;padding:14px 16px;border:1px solid #d1d5db;border-radius:14px;font-size:16px;background:white;outline:none}
+.search:focus{border-color:#6366f1;box-shadow:0 0 0 3px #6366f122}
+.selected{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.chip{border:0;border-radius:999px;padding:8px 11px;background:#111827;color:white;font-size:13px}
+.list{display:flex;flex-wrap:wrap;gap:7px;max-height:230px;overflow:auto;padding:2px 0 8px}
+.btn{border:1px solid #d1d5db;background:white;border-radius:11px;padding:9px 11px;font-size:14px}
+.btn.on{background:#111827;color:white;border-color:#111827}
+.card{background:white;border-radius:17px;padding:16px;margin-top:14px;box-shadow:0 2px 12px #0000000b}
+.card h2{font-size:17px;margin:0 0 10px}.empty{color:#9ca3af;font-size:14px}
+.counter{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.counter:last-child{border-bottom:0}.name{font-weight:600}.badge{font-size:12px;background:#eef2ff;color:#3730a3;border-radius:999px;padding:5px 8px}
+.common{background:#fff7ed}.common .badge{background:#ffedd5;color:#9a3412}
+.help{font-size:12px;color:#6b7280;margin-top:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app top">
+<h1>🎮 브롤 카운터 파인더</h1>
+<div class="sub">상대 브롤러를 선택하면 카운터와 공통 카운터를 보여줘.</div>
+<input id="search" class="search" placeholder="브롤러 검색..." autocomplete="off">
+<div id="selected" class="selected"></div>
+<div id="list" class="list"></div>
+<div id="result"></div>
+<div class="help">상대가 이미 선택한 브롤러는 추천 카운터에서 자동 제외돼.</div>
+</div>
+<script>
+const raw = {"쉘리": "찰리,타라,스튜,앰버,스파이크,크로우", "니타": "발리,주주 등 모든 스로어,앰버,그리프,엠즈", "콜트": "파이퍼,벨 등 저격수,지지", "불": "코델리우스,니타,오티스,그리프,루,미플", "브록": "맥스,재용,미나,파이퍼,나니,카제", "엘프리모": "콜레트,그리프,클랜시,메이지,시리우스", "발리": "모티스,에드거 등 모든 암살자,다이너", "포코": "엠즈,모티스,켄지,에드거,샘", "로사": "프랭크,엘프리모,불,쉘리,앰버", "제시": "발리,베리 등 모든 스로어,칼,모티스,에드거", "다이너마이크": "모티스,에드거 등 모든 암살자", "틱": "에드거,모티스 등 모든 암살자,그롬", "8비트": "벨,브록,맥스,스퀴크,루,피어스", "리코": "스튜,브록,주주,지지,모티스", "데릴": "루,R-T,그리프,불,오티스,코델리우스", "페니": "칼,샘,스퀴크,켄지,브록", "칼": "버즈,미나,스튜,콜레트,비비,코델리우스", "재키": "프랭크,불,엘프리모,콜레트,그리프,더그", "거스": "바이런,벨,파이퍼,데릴", "보": "모티스 등 모든 암살자,재용,맥스,스튜,레온", "엠즈": "스튜,모티스,에드거,앰버,자넷", "스튜": "러프스,포코,찰리,팸,타라,글로이", "파이퍼": "나니,R-T,카제,맥스", "팸": "루,제시,8비트,루미,바이런,스퀴크", "프랭크": "시리우스,콜레트,엘프리모,불,루미,체스터", "비비": "불,엘프리모,루미,크로우,버즈", "비": "미스터P,파이퍼,바이런,스프라우트,찰리", "나니": "진,재용,맥스,틱,미나", "에드거": "불,체스터,스튜(제로드래그),게일,오티스", "그리프": "스튜,미나,비,피어스,콜트,모", "그롬": "모티스,에드거 등 모든 암살자,비비", "보니": "찰리,메이지,파이퍼,알티,콜레트", "게일": "벨,바이런,스튜,앰버,주주,지기", "콜레트": "크로우,에드거,찰리,거스,러프스,웬디", "벨": "파이퍼,바이런,나니,보니", "애쉬": "불,로사,프랭크,앰버,콜레트", "롤라": "벨,페니,칼,바이런,지지", "샘": "코델리우스,불,니타,그리프,프랭크", "맨디": "나니,파이퍼,맥스,재용,미나,틱", "메이지": "찰리,타라,러프스,스튜,미나,주주", "행크": "발리,다이너 등 모든 스로어,프랭크,불,드라코,비비", "펄": "R-T,바이런,스튜,롤라,8비트,진", "래리&로리": "에드거,카제,발리,다이너마이크", "안젤로": "미스터P,맥스,재용,나니,이브", "베리": "모티스 등 모든 암살자,발리,크로우", "쉐이드": "행크,더그,스튜,버즈,키트,프랭크", "미플": "찰리,러프스,브록,애쉬,켄지,페니,시리우스", "트렁크": "프랭크,드라코,불,엘프리모,루", "볼트": "데미안,루,오티스,비비,게일,드라코", "모티스": "불,쉘리,체스터,오티스,게일", "타라": "앰버,샌디,자넷,버스터,페니,주주", "진": "벨,바이런,찰리,지지,8비트", "맥스": "크로우,롤라,스튜,글로이,미플", "미스터P": "모티스,에드거 등 모든 암살자,데릴", "스프라우트": "모티스,에드거 등 모든 암살자,틱,그롬", "바이런": "파이퍼,미스터P,모티스,릴리,알리", "스퀴크": "에드거,모티스 등 모든 암살자,칼,데릴", "루": "바이런,포코,보,비,크로우", "러프스": "모티스,에드거,켄지,칼,스퀴크,데미안,볼트", "버즈": "불,서지,코델리우스,미나,찰리", "팽": "찰리,타라,드라코,오티스", "이브": "페니,재용,자넷,브록,벨", "자넷": "칼,프랭크,보니,모티스,거스", "오티스": "스튜,콜트,러프스,포코,래리&로리,주주,알리", "버스터": "불,데릴,비비 등 모든탱커,켄지,주주,니타", "그레이": "찰리,미스터P,거스,바이런,재용,맥스", "R-T": "맥스,재용,레온,거스", "윌로우": "발리,래리,주주,다이너,그리프,스튜", "더그": "코델리우스,루미,프랭크,크로우,그리프,불", "척": "코델리우스,불,클랜시,멜로디(하이스트),콜레트", "찰리": "앰버,자넷,루미,지기,주주", "미코": "R-T,프랭크,불,더그,팽,스튜", "멜로디": "앰버,코델리우스,버스터,크로우,벨(장전금지)", "릴리": "코델리우스,불,R-T,드라코,트렁크", "클랜시": "찰리,타라,비,바이런,주주,래리&로리,페니", "모": "스튜,체스터,러프스,지지,모티스,미플", "주주": "모티스,에드거,발리,다이너", "올리": "포코,코델리우스,버스터,에드거,찰리,콜레트", "핑크스": "크로우,지기,팸,미플,엠즈,찰리", "루미": "모티스,에드거,릴리,크로우,브록", "재용": "크로우,보니,벨,바이런,메그", "알리": "불,트렁크,더그,프랭크,체스터,애쉬", "미나": "크로우,찰리,미플,코델리우스,트렁크", "지기": "에드거,모티스 등 모든 암살자,틱", "지지": "팽,행크,불,프랭크,더그,서지", "글로이": "크로우,벨,켄지,주주,찰리", "나지아": "모티스,비비,에드거,포코,더그,러프스", "데미안": "엠즈,니타,루,쉐이드,시리우스,에드거", "스타노바": "펄,크로우,그리프,애쉬,에드거,오티스", "웬디": "애쉬 등 모든탱커,에드거,팸,베리", "코스모": "", "빈스": "", "스파이크": "발리,지기,주주 등 모든 스로어,칼,벨", "크로우": "롤라,러프스,펄,미플,8비트,바이런", "레온": "크로우,자넷,진,미나,찰리,러프스,체스터", "샌디": "니타,드라코,엠즈,켄지,발리,주주", "앰버": "바이런,스튜,모티스,롤라,에드거", "메그": "롤라,비,콜레트,크로우,피어스", "서지": "찰리,러프스,타라,스튜,그리프", "체스터": "찰리,스튜,타라,러프스,루미,미나,엠즈", "코델리우스": "프랭크,스튜,샌디,서지,게일", "키트": "프랭크,릴리,코델리우스,행크,더그,재키", "드라코": "프랭크,코델리우스,크로우,애쉬,루", "켄지": "드라코,프랭크,그리프,핑크스,애쉬", "피어스": "찰리,미나,러프스,나니,스파이크", "노리": "재키,더그,서지,팽,스튜,그리프", "카제": "타라,체스터,크로우,켄지,샌디,핑크스", "시리우스": "에드거,발리,켄지,페니,루미"};
+const generic = {"모든 암살자": ["모티스", "에드거", "릴리", "미코", "팽", "버즈", "레온", "미나", "쉐이드", "켄지"], "모든 스로어": ["발리", "다이너마이크", "틱", "그롬", "윌로우", "스프라우트", "래리&로리", "주주"], "모든 탱커": ["불", "엘프리모", "로사", "프랭크", "애쉬", "행크", "재키", "트렁크", "드라코", "버스터"]};
+const names = Object.keys(raw);
+let selected = [];
+
+function candidates(name){
+  const text = raw[name] || "";
+  if(!text) return [];
+  return text.split(",").flatMap(x=>{
+    let t=x.trim();
+    const m=t.match(/^(.+?)\s*등 모든(암살자|스로어|탱커)$/);
+    if(m) return [m[1], ...(generic["모든 "+m[2]]||[])];
+    // Preserve conditional entries as their visible base name for counting.
+    if(t.includes("(")) return [t.split("(")[0].trim()];
+    if(t.includes("등 저격수")) {
+      const base=t.replace(/\s*등 저격수/,"").trim();
+      return [base]; // only explicit Belle/Piper-like named counter is used
+    }
+    if(t.includes("모든탱커")) {
+      return generic["모든 탱커"];
+    }
+    return t ? [t] : [];
+  });
+}
+
+function render(){
+  const q=document.getElementById("search").value.trim();
+  const list=document.getElementById("list");
+  const filtered=names.filter(n=>n.includes(q));
+  list.innerHTML=filtered.map(n=>`<button class="btn ${selected.includes(n)?"on":""}" onclick="toggle('${n.replace(/'/g,"\\\\'")}')">${n}</button>`).join("");
+  document.getElementById("selected").innerHTML=selected.map(n=>`<button class="chip" onclick="toggle('${n.replace(/'/g,"\\\\'")}')">${n} ×</button>`).join("");
+
+  const result=document.getElementById("result");
+  if(!selected.length){ result.innerHTML='<div class="card empty">상대 브롤러를 선택해줘.</div>'; return; }
+
+  let counts={};
+  selected.forEach(s=>candidates(s).forEach(c=>{counts[c]=(counts[c]||0)+1;}));
+  selected.forEach(s=>delete counts[s]);
+
+  const arr=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ko"));
+  const full=arr.filter(x=>x[1]===selected.length);
+  const partial=arr.filter(x=>x[1]<selected.length);
+
+  let html="";
+  if(full.length){
+    html+=`<div class="card common"><h2>🔥 공통 카운터</h2>${full.map(([n,c])=>row(n,c)).join("")}</div>`;
+  }
+  html+=`<div class="card"><h2>추천 카운터</h2>${(full.concat(partial)).length ? full.concat(partial).map(([n,c])=>row(n,c)).join("") : '<div class="empty">등록된 공통 카운터가 없어.</div>'}</div>`;
+  selected.forEach(s=>{
+    const cs=candidates(s).filter(x=>!selected.includes(x));
+    html+=`<div class="card"><h2>${s} 카운터</h2>${cs.length?cs.map(x=>row(x,1)).join(""):'<div class="empty">등록된 카운터 없음</div>'}</div>`;
+  });
+  result.innerHTML=html;
+}
+function row(n,c){return `<div class="counter"><span class="name">${n}</span><span class="badge">${c}/${selected.length}</span></div>`}
+function toggle(n){
+  selected=selected.includes(n)?selected.filter(x=>x!==n):[...selected,n];
+  render();
+}
+document.getElementById("search").addEventListener("input",render);
+render();
+</script>
+</body>
+</html>
